@@ -124,3 +124,31 @@ paths:
               timeStudied:
                 type: number
                 description: The total time spent in session
+
+    delete:
+      description: 'Deletes a single study session'
+      parameters:
+        - in: header
+          description: Identifies the user
+          name: X-User-Id
+          type: string
+          format: uuid
+          required: true
+        - in: path
+          name: courseId
+          required: true
+          type: string
+          format: uuid
+          description: Identifies the course
+        - in: path
+          name: sessionId
+          required: true
+          type: string
+          format: uuid
+          description: Identifies the study session
+
+      responses:
+        '200':
+          description: Successfully removed
+        '404':
+          description: Not found

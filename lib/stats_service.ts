@@ -14,7 +14,7 @@ export class StatsService extends cdk.Construct {
             readCapacity: 1,
             writeCapacity: 1,
             removalPolicy: cdk.RemovalPolicy.DESTROY,
-            partitionKey: { name: 'userIdCourseId', type: dynamodb.AttributeType.STRING },
+            partitionKey: { name: 'userId', type: dynamodb.AttributeType.STRING },
             sortKey: { name: 'sessionId', type: dynamodb.AttributeType.STRING },
             pointInTimeRecovery: true,
         });
@@ -23,11 +23,11 @@ export class StatsService extends cdk.Construct {
         console.log('table arn 👉', table.tableArn);
 
         // 👇 add local secondary index
-        // table.addLocalSecondaryIndex({
-        //     indexName: 'statusIndex',
-        //     sortKey: { name: 'status', type: dynamodb.AttributeType.STRING },
-        //     projectionType: dynamodb.ProjectionType.ALL,
-        // });
+        table.addLocalSecondaryIndex({
+            indexName: 'course',
+            sortKey: { name: 'courseId', type: dynamodb.AttributeType.STRING },
+            projectionType: dynamodb.ProjectionType.ALL,
+        });
 
         const handler = new lambda.Function(this, "StatsHandler", {
             runtime: lambda.Runtime.NODEJS_14_X,
@@ -56,6 +56,7 @@ export class StatsService extends cdk.Construct {
         const sessions = course.addResource('sessions');
         const session = sessions.addResource('{sessionId}');
         session.addMethod("GET", getStatsIntegration); // GET /courses/{courseId}/sessions/{sessionId}
+        session.addMethod("DELETE", getStatsIntegration); // DELETE /courses/{courseId}/sessions/{sessionId}
         addCorsOptions(courses);
         addCorsOptions(course);
         addCorsOptions(sessions);

@@ -1,5 +1,6 @@
 interface Session {
-    userIdCourseId: string,
+    userId: string,
+    courseId: string,
     sessionId: string,
     totalModulesStudied: number,
     averageScore: number,

@@ -19,7 +19,8 @@ export const addSessionStats = async (
   const { sessionId, totalModulesStudied, averageScore, timeStudied } = stats;
 
   const item: Session = {
-    userIdCourseId: `${userId}-${courseId}`,
+    userId,
+    courseId,
     sessionId,
     totalModulesStudied,
     averageScore,
@@ -56,7 +57,7 @@ export const getSessionStats = async (
   const params = {
     TableName: TABLE_NAME,
     Key: {
-      userIdCourseId: `${userId}-${courseId}`,
+      userId,
       sessionId,
     },
   };
@@ -64,7 +65,8 @@ export const getSessionStats = async (
   try {
     const response = await db.get(params).promise();
     if (response.Item) {
-        delete response.Item.userIdCourseId;
+      // TODO check course
+      delete response.Item.userId, delete response.Item.courseId;
       return { statusCode: 200, body: JSON.stringify(response.Item) };
     } else {
       return { statusCode: 404 };
@@ -79,12 +81,11 @@ export const getCourseStats = async (userId: string, courseId: string) => {
 
   const params = {
     TableName: TABLE_NAME,
-    KeyConditionExpression: "#uc = :uici",
-    ExpressionAttributeNames: {
-      "#uc": "userIdCourseId",
-    },
+    IndexName: 'course',
+    KeyConditionExpression: "userId = :ui and courseId = :ci",
     ExpressionAttributeValues: {
-      ":uici": `${userId}-${courseId}`,
+      ":ui": userId,
+      ":ci": courseId,
     },
   };
 
@@ -95,23 +96,52 @@ export const getCourseStats = async (userId: string, courseId: string) => {
     const totalTimeStudied = response.Items?.reduce(
       (acc, arg) => acc + arg.timeStudied,
       0
-    );
-    const totalModulesStudied = response.Items?.reduce((acc, arg) => acc + arg.totalModulesStudied, 0) || 1;
-      // we need to weight the average here
-    const totalScore = response.Items?.reduce(
-          (acc, arg) => acc + arg.totalModulesStudied * arg.averageScore,
-          0
-        ) || 0;
+    ) || 0;
+    const totalModulesStudied =
+      response.Items?.reduce((acc, arg) => acc + arg.totalModulesStudied, 0) ||
+      0;
+    // we need to weight the average here
+    const totalScore =
+      response.Items?.reduce(
+        (acc, arg) => acc + arg.totalModulesStudied * arg.averageScore,
+        0
+      ) || 0;
 
     return {
       statusCode: 200,
       body: JSON.stringify({
         timeStudied: totalTimeStudied,
         totalModulesStudied,
-        averageScore: totalScore / totalModulesStudied,
+        averageScore: totalModulesStudied ? totalScore / totalModulesStudied : 0,
       }),
     };
   } catch (dbError) {
+    return { statusCode: 500, body: JSON.stringify(dbError) };
+  }
+};
+
+export const deleteSessionStats = async (
+  userId: string,
+  sessionId: string
+) => {
+  const db = new AWS.DynamoDB.DocumentClient();
+
+  const params = {
+    TableName: TABLE_NAME,
+    Key: {
+      userId,
+      sessionId,
+    },
+  };
+
+  try {
+    const response = await db.delete(params).promise();
+    console.log('DEL res: ', JSON.stringify(response))
+    console.log('DEL res2: ', response)
+    return { statusCode: 200, body: undefined };
+  } catch (dbError) {
+      console.log(dbError);
+      console.log(JSON.stringify(dbError));
     return { statusCode: 500, body: JSON.stringify(dbError) };
   }
 };
