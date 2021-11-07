@@ -8,15 +8,10 @@ export const addSessionStats = async (
   courseId: string,
   stats: StatsDto
 ) => {
-  //   const TABLE_NAME = process.env.TABLE || "";
-  // const PRIMARY_KEY = process.env.PRIMARY_KEY || '';
-
   const db = new AWS.DynamoDB.DocumentClient();
 
-  const RESERVED_RESPONSE = `Error: You're using AWS reserved keywords as attributes`,
-    DYNAMODB_EXECUTION_ERROR = `Error: Execution update, caused a Dynamodb error, please take a look at your CloudWatch Logs.`;
-
-  const { sessionId, totalModulesStudied, averageScore, timeStudied } = stats;
+  //TODO: check stats
+  let { sessionId, totalModulesStudied, averageScore, timeStudied } = stats;
 
   const item: Session = {
     userId,
@@ -37,13 +32,7 @@ export const addSessionStats = async (
     await db.put(params).promise();
     return { statusCode: 201, body: "" };
   } catch (dbError) {
-    const dbE: any = dbError;
-    const errorResponse =
-      dbE.code === "ValidationException" &&
-      dbE.message.includes("reserved keyword")
-        ? DYNAMODB_EXECUTION_ERROR
-        : RESERVED_RESPONSE;
-    return { statusCode: 500, body: JSON.stringify(dbE) };
+    return { statusCode: 500, body: JSON.stringify(dbError) };
   }
 };
 
@@ -66,6 +55,9 @@ export const getSessionStats = async (
     const response = await db.get(params).promise();
     if (response.Item) {
       // TODO check course
+      if(response.Item.courseId !== courseId) {
+      return { statusCode: 403 };
+      }
       delete response.Item.userId, delete response.Item.courseId;
       return { statusCode: 200, body: JSON.stringify(response.Item) };
     } else {
@@ -136,12 +128,9 @@ export const deleteSessionStats = async (
 
   try {
     const response = await db.delete(params).promise();
-    console.log('DEL res: ', JSON.stringify(response))
-    console.log('DEL res2: ', response)
     return { statusCode: 200, body: undefined };
   } catch (dbError) {
       console.log(dbError);
-      console.log(JSON.stringify(dbError));
     return { statusCode: 500, body: JSON.stringify(dbError) };
   }
 };

@@ -19,9 +19,6 @@ export class StatsService extends cdk.Construct {
             pointInTimeRecovery: true,
         });
 
-        console.log('table name 👉', table.tableName);
-        console.log('table arn 👉', table.tableArn);
-
         // 👇 add local secondary index
         table.addLocalSecondaryIndex({
             indexName: 'course',
