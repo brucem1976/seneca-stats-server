@@ -5,6 +5,7 @@
     "seneca_stats_service": "bin/seneca_stats_service.js"
   },
   "scripts": {
+    "postinstall": "cd resources && npm install",
     "build": "tsc",
     "watch": "tsc -w",
     "test": "mocha",
