@@ -13,7 +13,7 @@ npm install
 npm run build
 cdk deploy
 ```
-set the resultant API URL to environment variable STATS_URL (WITHOUT the trailing /)
+set the resultant API URL to environment variable STATS_API (WITHOUT the trailing /)
 ```
 npm run test
 ```
